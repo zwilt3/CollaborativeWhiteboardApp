@@ -6,6 +6,7 @@ public class FileTransferServer extends Thread{
 	public static final int MAX_FILENAME_LEN = 256;
 
 	private ServerSocket serverSocket;
+	private int serverPort;
 
 	/**
 	 * Opens connections on serverPort to listen for filenames and return their contents.
@@ -14,16 +15,15 @@ public class FileTransferServer extends Thread{
 	 * @throws IOException
 	 */
 	public FileTransferServer(int serverPort) throws IOException{
+		this.serverPort = serverPort;
 		serverSocket = new ServerSocket(serverPort);
-		System.out.println("Server is listening on port " + serverPort);
-
 	}
 
 	public void run(){
+		System.out.println("Server is listening on port " + serverPort);
 		while (true){
 			Socket clientSocket;
 			try {
-				System.out.println("Waiting to accept");
 				clientSocket = serverSocket.accept();
 				new Connection(clientSocket);
 			} 
@@ -40,7 +40,6 @@ public class FileTransferServer extends Thread{
 		Socket clientSocket;
 
 		public Connection(Socket clientSocket) throws IOException{
-			System.out.println("Creating a connection");
 			this.clientSocket = clientSocket;
 			input = new DataInputStream(clientSocket.getInputStream());
 			output = new DataOutputStream(clientSocket.getOutputStream());
@@ -50,26 +49,24 @@ public class FileTransferServer extends Thread{
 
 		public void run(){
 			try{
-				System.out.println("Server about to read");
 				int filenameLen = input.readInt();
 				String filename = IOTools.readFully(input, filenameLen);
 				
-				System.out.println("Filename = " + filename);
-
 				//Send the bytes
 				BufferedReader br = null;
 				try{
 					br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(filename))));
 				}
 				catch(IOException e){
-					output.writeBytes("File not found! You requested: " + filename);
+					String errorMessage = "File not found! You requested: " + filename;
+					output.writeInt(errorMessage.length());
+					output.writeBytes(errorMessage);
 					return;
 				}
 				String line;
 				StringBuilder fileData = new StringBuilder();
 				while ((line = br.readLine()) != null){
 					fileData.append(line);
-					System.out.println("line = " + line);
 				}
 				output.writeInt(fileData.length());
 				output.writeBytes(fileData.toString());
@@ -81,6 +78,10 @@ public class FileTransferServer extends Thread{
 		}
 	}
 
+	public static void main(String[] args) throws IOException{
+		FileTransferServer server = new FileTransferServer(8000);
+		server.start();
+	}
 
 
 }
