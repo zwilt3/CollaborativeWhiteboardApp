@@ -19,24 +19,19 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ComposePathEffect;
-import android.graphics.CornerPathEffect;
-import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.PathDashPathEffect;
-import android.graphics.PathEffect;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -102,19 +97,27 @@ public class TouchPaint extends GraphicsActivity {
 
 	/** The index of the current color to use. */
 	int mColorIndex;
+	
+	FileTransferClient mFClient = null;
     
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		
+		try
+		{
+			mFClient = new FileTransferClient("127.0.0.1", 8000);
+		}
+		catch(UnknownHostException e)
+		{
+		}
+		catch(IOException e)
+		{
+		}		
 		// Create and attach the view that is responsible for painting.
-		mView = new PaintView(this);
+		mView = new PaintView(this, mFClient);
 		setContentView(mView);
 		mView.requestFocus();
-        
-		
 		// Restore the fading option if we are being thawed from a
 		// previously saved state. Note that we are not currently remembering
 		// the contents of the bitmap.
@@ -267,15 +270,14 @@ public class TouchPaint extends GraphicsActivity {
 				
         private Path mPath;
         private PathData mPathData;
-        private PathEffect[] mEffects;
-        private int[] mColors;
-        private float mPhase;
+        private FileTransferClient mFClient = null;
 		
-		public PaintView(Context c) {
+		public PaintView(Context c, FileTransferClient FClient) {
 			
             super(c);			
 			
             setFocusable(true);
+            mFClient = FClient;
 			/*
 			  setFocusableInTouchMode(true);
 
@@ -320,6 +322,10 @@ public class TouchPaint extends GraphicsActivity {
 		
 		public void send()
 		{
+			if (mFClient != null)
+			{
+				mFClient.sendPathData(mPathData);
+			}
 			return;
 		}
 		
