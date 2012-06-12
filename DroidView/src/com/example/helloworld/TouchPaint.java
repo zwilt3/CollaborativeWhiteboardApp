@@ -37,6 +37,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 /**
@@ -80,6 +81,8 @@ public class TouchPaint extends GraphicsActivity {
 	
 	/** Menu ID for the command to toggle fading. */
 	private static final int SEND_ID = Menu.FIRST + 2;
+	
+	private static final int TEST_ID = Menu.FIRST + 3;
 
 	/** How often to fade the contents of the window (in ms). */
 	private static final int FADE_DELAY = 100;
@@ -111,7 +114,7 @@ public class TouchPaint extends GraphicsActivity {
 		setContentView(mView);
 		mView.requestFocus();
         
-	
+		
 		// Restore the fading option if we are being thawed from a
 		// previously saved state. Note that we are not currently remembering
 		// the contents of the bitmap.
@@ -129,6 +132,7 @@ public class TouchPaint extends GraphicsActivity {
 		menu.add(0, CLEAR_ID, 0, "Clear");
 		menu.add(0, FADE_ID, 0, "Fade").setCheckable(true);
 		menu.add(0, SEND_ID, 0, "Send");
+		menu.add(0, TEST_ID, 0, "Test");
 		return super.onCreateOptionsMenu(menu);
 	}
 
@@ -154,6 +158,9 @@ public class TouchPaint extends GraphicsActivity {
 			return true;
 		case SEND_ID:
 			mView.send();
+			return true;
+		case TEST_ID:
+			mView.test();
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
@@ -259,6 +266,7 @@ public class TouchPaint extends GraphicsActivity {
 		private int mFadeSteps = MAX_FADE_STEPS;
 				
         private Path mPath;
+        private PathData mPathData;
         private PathEffect[] mEffects;
         private int[] mColors;
         private float mPhase;
@@ -266,8 +274,9 @@ public class TouchPaint extends GraphicsActivity {
 		public PaintView(Context c) {
 			
             super(c);			
-			setFocusable(true);
 			
+            setFocusable(true);
+			/*
 			  setFocusableInTouchMode(true);
 
 	            mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -281,7 +290,7 @@ public class TouchPaint extends GraphicsActivity {
 	            mColors = new int[] { Color.BLACK, Color.RED, Color.BLUE,
 	                                  Color.GREEN, Color.MAGENTA, Color.BLACK
 	                                };
-
+*/
 			mPaint = new Paint();
 			mPaint.setAntiAlias(true);
 
@@ -314,6 +323,38 @@ public class TouchPaint extends GraphicsActivity {
 			return;
 		}
 		
+		public void test()
+		{
+			ArrayList<Float> xcoors = new ArrayList<Float>();
+			ArrayList<Float> ycoors = new ArrayList<Float>();
+			xcoors.add((float)24);
+			xcoors.add((float)40);
+			xcoors.add((float)43);
+			xcoors.add((float)34);
+			xcoors.add((float)32);
+			xcoors.add((float)112);
+			ycoors.add((float)10);
+			ycoors.add((float)50);
+			ycoors.add((float)83);
+			ycoors.add((float)6);
+			ycoors.add((float)56);
+			ycoors.add((float)123);
+			mPathData = new PathData(xcoors, ycoors);
+			mPath = mPathData.constructPath();
+			Paint mPaint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mPaint2.setStyle(Paint.Style.STROKE);
+            mPaint2.setStrokeWidth(6);
+			mPaint2.setColor(Color.RED);
+			mCanvas.drawPath(mPath, mPaint2);
+			invalidate();
+			return;
+		}
+		
+		public void drawFromPathData(PathData _pathdata)
+		{
+			
+		}
+		
 
 		@Override
 		protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -342,7 +383,7 @@ public class TouchPaint extends GraphicsActivity {
 
 		@Override
 		protected void onDraw(Canvas canvas) {
-			
+	/*		
 	           canvas.drawColor(Color.BLACK);
 
 	            RectF bounds = new RectF();
@@ -351,20 +392,22 @@ public class TouchPaint extends GraphicsActivity {
 
 	            makeEffects(mEffects, mPhase);
 	            mPhase += 1;
-	            invalidate();
 
-	            for (int i = 0; i < mEffects.length; i++) {
+	            for (int i = 1; i < 2; i++) {
 	                mPaint.setPathEffect(mEffects[i]);
 	                mPaint.setColor(mColors[i]);
 	                canvas.drawPath(mPath, mPaint);
 	                canvas.translate(0, 28);
 	            }
-			
+	            
+	            canvas.setMatrix(null);
+		*/	
 			if (mBitmap != null) {
 				canvas.drawBitmap(mBitmap, 0, 0, null);
 			}
 			
-			
+  //          invalidate();
+
 		}
 
 		@Override
@@ -601,11 +644,13 @@ public class TouchPaint extends GraphicsActivity {
 			}
 		}
 		
-
+/*
+		
         private PathEffect makeDash(float phase) {
             return new DashPathEffect(new float[] { 15, 5, 8, 5 }, phase);
         }
-
+        
+        
         private void makeEffects(PathEffect[] e, float phase) {
             e[0] = null;     // no effect
             e[1] = new CornerPathEffect(10);
@@ -632,17 +677,17 @@ public class TouchPaint extends GraphicsActivity {
                 p.lineTo(i*20, (float)Math.random() * 35);
             }
             return p;
-        }
+        } 
 
         private Path makePathDash() {
             Path p = new Path();
-            p.moveTo(4, 0);
-            p.lineTo(0, -4);
-            p.lineTo(8, -4);
-            p.lineTo(12, 0);
-            p.lineTo(8, 4);
-            p.lineTo(0, 4);
+            p.moveTo(24, 10);
+            p.lineTo(40, 50);
+            p.lineTo(43, 83);
+            p.lineTo(34, 6);
+            p.lineTo(32, 56);
+            p.lineTo(12, 23);
             return p;
-        }
+        }*/
 	}
 }

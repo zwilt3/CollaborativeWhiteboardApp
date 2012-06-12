@@ -6,6 +6,10 @@ import android.graphics.Path;
 
 public class PathData implements Serializable{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private ArrayList<Float> xPoints;
 	private ArrayList<Float> yPoints;
 	
@@ -41,7 +45,7 @@ public class PathData implements Serializable{
 		if (xPoints.size() == 0){
 			return p;
 		}
-		p.setLastPoint(xPoints.get(0), yPoints.get(0));
+		p.moveTo(xPoints.get(0), yPoints.get(0));
 		for (int i = 1; i < xPoints.size(); i++){
 			p.lineTo(xPoints.get(i), yPoints.get(i));
 		}
