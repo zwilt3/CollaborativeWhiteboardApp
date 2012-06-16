@@ -15,7 +15,6 @@ package com.example.helloworld;
  * limitations under the License.
  */
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -115,7 +114,7 @@ public class TouchPaint extends GraphicsActivity {
 		{
 		}		
 		// Create and attach the view that is responsible for painting.
-		mView = new PaintView(this, mFClient);
+		mView = new PaintView(this);
 		setContentView(mView);
 		mView.requestFocus();
 		// Restore the fading option if we are being thawed from a
@@ -270,14 +269,13 @@ public class TouchPaint extends GraphicsActivity {
 				
         private Path mPath;
         private PathData mPathData;
-        private FileTransferClient mFClient = null;
 		
-		public PaintView(Context c, FileTransferClient FClient) {
+		public PaintView(TouchPaint c) {
 			
             super(c);			
 			
             setFocusable(true);
-            mFClient = FClient;
+            
 			/*
 			  setFocusableInTouchMode(true);
 
