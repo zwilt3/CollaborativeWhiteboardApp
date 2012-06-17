@@ -12,8 +12,12 @@ public class FileTransferClient {
 	}
 	
 	public static void main(String[] args) throws UnknownHostException, IOException{
-		FileTransferClient client = new FileTransferClient("192.168.5.212", 8000);
-		System.out.println(client.getFile("/TestFile"));
+		FileTransferClient client = new FileTransferClient("98.232.8.251", 8000);
+		System.out.println(client.getFile("Hello.txt"));
+	}
+	
+	public PathData loadPathData(String filename){
+		
 	}
 	
 	public String getFile(String filename) throws IOException{

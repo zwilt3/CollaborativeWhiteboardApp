@@ -12,34 +12,43 @@ public class PathData implements Serializable{
 	private static final long serialVersionUID = 1L;
 	private ArrayList<Float> xPoints;
 	private ArrayList<Float> yPoints;
-	
+
+	private String username;
+	private int id;
+
 	public PathData(){
 		this(new ArrayList<Float>(), new ArrayList<Float>());
 	}
-	
+
 	public PathData(ArrayList<Float> xPoints, ArrayList<Float> yPoints){
+		this(xPoints, yPoints, "Guest", -1);
+	}
+
+	public PathData(ArrayList<Float> xPoints, ArrayList<Float> yPoints, String username, int id){
 		this.xPoints = xPoints;
 		this.yPoints = yPoints;
+		this.username = username;
+		this.id = id;
 	}
-	
+
 	public void addPoint(float x, float y){
 		xPoints.add(x);
 		yPoints.add(y);
 	}
-	
+
 	public void removePoint(int index){
 		xPoints.remove(index);
 		yPoints.remove(index);
 	}
-	
+
 	public ArrayList<Float> getXPoints(){
 		return xPoints;
 	}
-	
+
 	public ArrayList<Float> getYPoints(){
 		return yPoints;
 	}
-	
+
 	public Path constructPath(){
 		Path p = new Path();
 		if (xPoints.size() == 0){

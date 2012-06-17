@@ -269,6 +269,8 @@ public class TouchPaint extends GraphicsActivity {
 				
         private Path mPath;
         private PathData mPathData;
+        
+        private List<Path> pathVec;
 		
 		public PaintView(TouchPaint c) {
 			
@@ -297,6 +299,10 @@ public class TouchPaint extends GraphicsActivity {
 			mFadePaint = new Paint();
 			mFadePaint.setColor(BACKGROUND_COLOR);
 			mFadePaint.setAlpha(FADE_ALPHA);
+			
+			//TODO get this from server on creation
+			pathVec = new Vector<Path>();
+			
 		}
 
 		public void clear() {
@@ -307,6 +313,24 @@ public class TouchPaint extends GraphicsActivity {
 
 				mFadeSteps = MAX_FADE_STEPS;
 			}
+		}
+		
+		/**
+		 * Send the path at index ind to the server
+		 * Should always be called for the current last path
+		 */
+		private void sendUpdate(int ind){
+			//TODO
+		}
+		
+		private void initFromServer(){			
+			int lastIndex = getLatestId();
+			//TODO
+		}
+		
+		private int getLatestId(){
+			//TODO
+			return 0;
 		}
 
 		public void fade() {

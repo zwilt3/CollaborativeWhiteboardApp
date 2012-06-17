@@ -79,7 +79,7 @@ public class FileTransferServer extends Thread{
 	}
 
 	public static void main(String[] args) throws IOException{
-		FileTransferServer server = new FileTransferServer(8000);
+		FileTransferServer server = new FileTransferServer(8008);
 		server.start();
 	}
 
