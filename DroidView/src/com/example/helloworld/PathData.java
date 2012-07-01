@@ -29,6 +29,11 @@ public class PathData implements Serializable{
 		this.yPoints = yPoints;
 		this.username = username;
 		this.id = id;
+		updateServer();
+	}
+	
+	public void updateServer(){
+		
 	}
 
 	public void addPoint(float x, float y){

@@ -4,7 +4,7 @@ import java.io.*;
 public class FileSender {
 	
 	public void sendFile(Socket socket, String filename) throws IOException{
-		DataInputStream input = new DataInputStream(socket.getInputStream());
+		DataInputStream input = new DataInputStream(socket.getInputStream()); 
 		DataOutputStream output = new DataOutputStream(socket.getOutputStream());
 		
 		StringBuilder data = new StringBuilder();
