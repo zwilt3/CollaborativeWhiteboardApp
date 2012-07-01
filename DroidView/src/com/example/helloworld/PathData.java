@@ -48,6 +48,12 @@ public class PathData implements Serializable{
 	public ArrayList<Float> getYPoints(){
 		return yPoints;
 	}
+	
+	public void clear()
+	{
+		xPoints.clear();
+		yPoints.clear();
+	}
 
 	public Path constructPath(){
 		Path p = new Path();

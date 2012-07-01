@@ -270,8 +270,13 @@ public class TouchPaint extends GraphicsActivity {
         private Path mPath;
         private PathData mPathData;
         
-        private List<Path> pathVec;
-		
+        private ArrayList<Path> pathVec;
+        private PathData currentPath = new PathData();
+        long lastpointtime = System.currentTimeMillis();
+		long currentpointtime;
+		private float mLastX = 0;
+		private float mLastY = 0;
+        
 		public PaintView(TouchPaint c) {
 			
             super(c);			
@@ -301,7 +306,7 @@ public class TouchPaint extends GraphicsActivity {
 			mFadePaint.setAlpha(FADE_ALPHA);
 			
 			//TODO get this from server on creation
-			pathVec = new Vector<Path>();
+			pathVec = new ArrayList<Path>();
 			
 		}
 
@@ -356,7 +361,7 @@ public class TouchPaint extends GraphicsActivity {
 			ArrayList<Float> xcoors = new ArrayList<Float>();
 			ArrayList<Float> ycoors = new ArrayList<Float>();
 			xcoors.add((float)24);
-			xcoors.add((float)40);
+/*			xcoors.add((float)40);
 			xcoors.add((float)43);
 			xcoors.add((float)34);
 			xcoors.add((float)32);
@@ -365,7 +370,7 @@ public class TouchPaint extends GraphicsActivity {
 			ycoors.add((float)50);
 			ycoors.add((float)83);
 			ycoors.add((float)6);
-			ycoors.add((float)56);
+			ycoors.add((float)56);*/ 
 			ycoors.add((float)123);
 			mPathData = new PathData(xcoors, ycoors);
 			mPath = mPathData.constructPath();
@@ -380,7 +385,14 @@ public class TouchPaint extends GraphicsActivity {
 		
 		public void drawFromPathData(PathData _pathdata)
 		{
-			
+			mPath = _pathdata.constructPath();
+			Paint mPaint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mPaint2.setStyle(Paint.Style.STROKE);
+            mPaint2.setStrokeWidth(6);
+			mPaint2.setColor(Color.RED);
+			mCanvas.drawPath(mPath, mPaint2);
+			invalidate();
+			return;
 		}
 		
 
@@ -559,6 +571,9 @@ public class TouchPaint extends GraphicsActivity {
 		private void paint(PaintMode mode, float x, float y, float pressure,
 				float major, float minor, float orientation, float distance,
 				float tilt) {
+			
+			currentpointtime = System.currentTimeMillis();
+			
 			if (mBitmap != null) {
 				if (major <= 0 || minor <= 0) {
 					// If size is not available, use a default value.
@@ -570,6 +585,21 @@ public class TouchPaint extends GraphicsActivity {
 					mPaint.setColor(COLORS[mColorIndex]);
 					mPaint.setAlpha(Math.min((int) (pressure * 128), 255));
 					drawOval(mCanvas, x, y, major, minor, orientation, mPaint);
+					if(true)
+					{
+						if ((currentpointtime-lastpointtime)>1000 
+								|| (Math.abs(this.mLastX - x)+Math.abs(this.mLastY-y)) > 40)
+						{
+							this.drawFromPathData(this.currentPath);
+							//send out this path;
+							this.currentPath.clear();
+							//lastpointtime = 0;
+						}
+					}
+					this.currentPath.addPoint(x, y);
+					lastpointtime = currentpointtime;
+					mLastX = x;
+					mLastY = y;
 					break;
 
 				case Erase:
