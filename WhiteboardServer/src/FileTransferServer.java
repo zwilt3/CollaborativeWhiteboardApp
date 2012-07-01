@@ -1,4 +1,5 @@
 import java.net.*;
+import java.util.HashMap;
 import java.io.*;
 
 public class FileTransferServer extends Thread{
@@ -7,6 +8,7 @@ public class FileTransferServer extends Thread{
 
 	private ServerSocket serverSocket;
 	private int serverPort;
+	private HashMap<String, String> users;
 
 	/**
 	 * Opens connections on serverPort to listen for filenames and return their contents.
@@ -17,6 +19,14 @@ public class FileTransferServer extends Thread{
 	public FileTransferServer(int serverPort) throws IOException{
 		this.serverPort = serverPort;
 		serverSocket = new ServerSocket(serverPort);
+		users = fakeUserDatabase();
+	}
+	
+	private HashMap<String, String> fakeUserDatabase(){
+		HashMap<String, String> ret = new HashMap<String, String>();
+		ret.put("user", "pass");
+		ret.put("", "");
+		return ret;
 	}
 
 	public void run(){
@@ -43,12 +53,48 @@ public class FileTransferServer extends Thread{
 			this.clientSocket = clientSocket;
 			input = new DataInputStream(clientSocket.getInputStream());
 			output = new DataOutputStream(clientSocket.getOutputStream());
+			
 			this.start();
 		}
 		
+		public boolean authenticate() throws IOException{
+			//step 1.server - get username
+			int usernameLen = input.readInt();
+			String username = IOTools.readFully(input, usernameLen);
+			
+			//step 2.server - getpassword
+			int passLen = input.readInt();
+			String password = IOTools.readFully(input, passLen);
+			
+			//step 3.server - send "OK" or "FAIL"
+			boolean isAuth = !users.containsKey(username) || users.get(username).equals(hash(password));
+			if (isAuth) sendMessage("OK");
+			else sendMessage("FAIL");
+			return isAuth;
+		}
+		
+		private String hash(String password){
+			return password;
+		}
+		
+		private void sendFailure() throws IOException{
+			sendMessage("We have encountered an unknown server error.");
+		}
+		
+		private void sendMessage(String message) throws IOException{
+			output.writeInt(message.length());
+			output.writeBytes(message);
+			output.flush();
+		}
 
 		public void run(){
 			try{
+				
+				if (!authenticate()){
+					sendFailure();
+				}
+				
+				//step 4.server - get filename
 				int filenameLen = input.readInt();
 				String filename = IOTools.readFully(input, filenameLen);
 				
@@ -58,9 +104,7 @@ public class FileTransferServer extends Thread{
 					br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(filename))));
 				}
 				catch(IOException e){
-					String errorMessage = "File not found! You requested: " + filename;
-					output.writeInt(errorMessage.length());
-					output.writeBytes(errorMessage);
+					sendMessage("[ERROR] File not found! You requested: " + filename);
 					return;
 				}
 				String line;
@@ -68,9 +112,8 @@ public class FileTransferServer extends Thread{
 				while ((line = br.readLine()) != null){
 					fileData.append(line);
 				}
-				output.writeInt(fileData.length());
-				output.writeBytes(fileData.toString());
-				output.flush();
+				//step 5.server - send file contents
+				sendMessage(fileData.toString());
 			}
 			catch(Exception e){
 				e.printStackTrace();
@@ -79,8 +122,11 @@ public class FileTransferServer extends Thread{
 	}
 
 	public static void main(String[] args) throws IOException{
-		FileTransferServer server = new FileTransferServer(8008);
+		int port = 8009;
+		FileTransferServer server = new FileTransferServer(port);
 		server.start();
+		FileTransferClient client = new FileTransferClient("localhost", port);
+		System.out.println(client.getFile("/TestFile"));
 	}
 
 
