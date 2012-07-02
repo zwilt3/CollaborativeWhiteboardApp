@@ -584,13 +584,13 @@ public class TouchPaint extends GraphicsActivity {
 				case Draw:
 					mPaint.setColor(COLORS[mColorIndex]);
 					mPaint.setAlpha(Math.min((int) (pressure * 128), 255));
-					drawOval(mCanvas, x, y, major, minor, orientation, mPaint);
+					//drawOval(mCanvas, x, y, major, minor, orientation, mPaint);
 					if(lastpointtime != 0)
 					{
 						if ((currentpointtime-lastpointtime)>1000 
-								|| (Math.abs(this.mLastX - x)+Math.abs(this.mLastY-y)) > 40)
+								|| (Math.abs(this.mLastX - x)+Math.abs(this.mLastY-y)) > 60)
 						{
-							this.drawFromPathData(this.currentPath);
+							//this.drawFromPathData(this.currentPath);
 							//send out this path;
 							this.currentPath.clear();
 							lastpointtime = 0;
@@ -600,6 +600,7 @@ public class TouchPaint extends GraphicsActivity {
 					lastpointtime = currentpointtime;
 					mLastX = x;
 					mLastY = y;
+					this.drawFromPathData(this.currentPath);
 					break;
 
 				case Erase:
