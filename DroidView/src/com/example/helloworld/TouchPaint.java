@@ -272,7 +272,7 @@ public class TouchPaint extends GraphicsActivity {
         
         private ArrayList<Path> pathVec;
         private PathData currentPath = new PathData();
-        long lastpointtime = System.currentTimeMillis();
+        long lastpointtime = 0;
 		long currentpointtime;
 		private float mLastX = 0;
 		private float mLastY = 0;
@@ -585,7 +585,7 @@ public class TouchPaint extends GraphicsActivity {
 					mPaint.setColor(COLORS[mColorIndex]);
 					mPaint.setAlpha(Math.min((int) (pressure * 128), 255));
 					drawOval(mCanvas, x, y, major, minor, orientation, mPaint);
-					if(true)
+					if(lastpointtime != 0)
 					{
 						if ((currentpointtime-lastpointtime)>1000 
 								|| (Math.abs(this.mLastX - x)+Math.abs(this.mLastY-y)) > 40)
@@ -593,7 +593,7 @@ public class TouchPaint extends GraphicsActivity {
 							this.drawFromPathData(this.currentPath);
 							//send out this path;
 							this.currentPath.clear();
-							//lastpointtime = 0;
+							lastpointtime = 0;
 						}
 					}
 					this.currentPath.addPoint(x, y);
