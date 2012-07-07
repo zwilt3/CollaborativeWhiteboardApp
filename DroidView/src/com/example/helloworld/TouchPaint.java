@@ -86,7 +86,7 @@ public class TouchPaint extends GraphicsActivity {
 			Color.YELLOW, Color.GREEN, Color.CYAN, Color.BLUE, Color.MAGENTA, };
 
 	/** Background color. */
-	static final int BACKGROUND_COLOR = Color.BLACK;
+	static final int BACKGROUND_COLOR = Color.WHITE;
 
 	/** The view responsible for drawing the window. */
 	PaintView mView;
@@ -98,10 +98,12 @@ public class TouchPaint extends GraphicsActivity {
 	int mColorIndex;
 	
 	FileTransferClient mFClient = null;
+
     
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		
 		super.onCreate(savedInstanceState);
 		try
 		{
@@ -115,6 +117,7 @@ public class TouchPaint extends GraphicsActivity {
 		}		
 		// Create and attach the view that is responsible for painting.
 		mView = new PaintView(this);
+		requestWindowFeature(1); //no title
 		setContentView(mView);
 		mView.requestFocus();
 		// Restore the fading option if we are being thawed from a
@@ -272,10 +275,12 @@ public class TouchPaint extends GraphicsActivity {
         
         private ArrayList<Path> pathVec;
         private PathData currentPath = new PathData();
-        long lastpointtime = 0;
-		long currentpointtime;
+        public long lastpointtime = 0; //zero denotes a blank state for the stroke
+		public long currentpointtime;
 		private float mLastX = 0;
 		private float mLastY = 0;
+		public boolean StrokeEnded = false;
+		private ViewPoller mPoller;
         
 		public PaintView(TouchPaint c) {
 			
@@ -283,21 +288,6 @@ public class TouchPaint extends GraphicsActivity {
 			
             setFocusable(true);
             
-			/*
-			  setFocusableInTouchMode(true);
-
-	            mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-	            mPaint.setStyle(Paint.Style.STROKE);
-	            mPaint.setStrokeWidth(6);
-
-	            mPath = makeFollowPath();
-
-	            mEffects = new PathEffect[6];
-
-	            mColors = new int[] { Color.BLACK, Color.RED, Color.BLUE,
-	                                  Color.GREEN, Color.MAGENTA, Color.BLACK
-	                                };
-*/
 			mPaint = new Paint();
 			mPaint.setAntiAlias(true);
 
@@ -307,6 +297,8 @@ public class TouchPaint extends GraphicsActivity {
 			
 			//TODO get this from server on creation
 			pathVec = new ArrayList<Path>();
+			mPoller = new ViewPoller(this);
+			mPoller.start();
 			
 		}
 
@@ -332,7 +324,7 @@ public class TouchPaint extends GraphicsActivity {
 			int lastIndex = getLatestId();
 			//TODO
 		}
-		
+	
 		private int getLatestId(){
 			//TODO
 			return 0;
@@ -351,7 +343,7 @@ public class TouchPaint extends GraphicsActivity {
 		{
 			if (mFClient != null)
 			{
-				mFClient.sendPathData(mPathData);
+				mFClient.sendPathData(this.currentPath);
 			}
 			return;
 		}
@@ -418,30 +410,13 @@ public class TouchPaint extends GraphicsActivity {
 			}
 			mBitmap = newBitmap;
 			mCanvas = newCanvas;
+			mCanvas.drawColor(BACKGROUND_COLOR);
 			mFadeSteps = MAX_FADE_STEPS;
 		}
 
 		@Override
 		protected void onDraw(Canvas canvas) {
-	/*		
-	           canvas.drawColor(Color.BLACK);
 
-	            RectF bounds = new RectF();
-	            mPath.computeBounds(bounds, false);
-	            canvas.translate(10 - bounds.left, 10 - bounds.top);
-
-	            makeEffects(mEffects, mPhase);
-	            mPhase += 1;
-
-	            for (int i = 1; i < 2; i++) {
-	                mPaint.setPathEffect(mEffects[i]);
-	                mPaint.setColor(mColors[i]);
-	                canvas.drawPath(mPath, mPaint);
-	                canvas.translate(0, 28);
-	            }
-	            
-	            canvas.setMatrix(null);
-		*/	
 			if (mBitmap != null) {
 				canvas.drawBitmap(mBitmap, 0, 0, null);
 			}
@@ -590,8 +565,7 @@ public class TouchPaint extends GraphicsActivity {
 						if ((currentpointtime-lastpointtime)>1000 
 								|| (Math.abs(this.mLastX - x)+Math.abs(this.mLastY-y)) > 60)
 						{
-							//this.drawFromPathData(this.currentPath);
-							//send out this path;
+							//this.send();
 							this.currentPath.clear();
 							lastpointtime = 0;
 						}
@@ -609,16 +583,19 @@ public class TouchPaint extends GraphicsActivity {
 					drawOval(mCanvas, x, y, major, minor, orientation, mPaint);
 					break;
 
-				case Splat:
-					mPaint.setColor(COLORS[mColorIndex]);
-					mPaint.setAlpha(64);
-					drawSplat(mCanvas, x, y, orientation, distance, tilt,
-							mPaint);
-					break;
 				}
 			}
 			mFadeSteps = 0;
 			invalidate();
+		}
+		
+		public void pollerForceEnd()
+		{
+			this.drawFromPathData(this.currentPath);
+			invalidate();
+			//this.send();
+			this.currentPath.clear();
+			lastpointtime = 0;
 		}
 
 		/**
@@ -641,112 +618,5 @@ public class TouchPaint extends GraphicsActivity {
 			canvas.drawOval(mReusableOvalRect, paint);
 			canvas.restore();
 		}
-
-		/**
-		 * Splatter paint in an area.
-		 * 
-		 * Chooses random vectors describing the flow of paint from a round
-		 * nozzle across a range of a few degrees. Then adds this vector to the
-		 * direction indicated by the orientation and tilt of the tool and
-		 * throws paint at the canvas along that vector.
-		 * 
-		 * Repeats the process until a masterpiece is born.
-		 */
-		private void drawSplat(Canvas canvas, float x, float y,
-				float orientation, float distance, float tilt, Paint paint) {
-			float z = distance * 2 + 10;
-
-			// Calculate the center of the spray.
-			float nx = (float) (Math.sin(orientation) * Math.sin(tilt));
-			float ny = (float) (-Math.cos(orientation) * Math.sin(tilt));
-			float nz = (float) Math.cos(tilt);
-			if (nz < 0.05) {
-				return;
-			}
-			float cd = z / nz;
-			float cx = nx * cd;
-			float cy = ny * cd;
-
-			for (int i = 0; i < SPLAT_VECTORS; i++) {
-				// Make a random 2D vector that describes the direction of a
-				// speck of paint
-				// ejected by the nozzle in the nozzle's plane, assuming the
-				// tool is
-				// perpendicular to the surface.
-				double direction = mRandom.nextDouble() * Math.PI * 2;
-				double dispersion = mRandom.nextGaussian() * 0.2;
-				double vx = Math.cos(direction) * dispersion;
-				double vy = Math.sin(direction) * dispersion;
-				double vz = 1;
-
-				// Apply the nozzle tilt angle.
-				double temp = vy;
-				vy = temp * Math.cos(tilt) - vz * Math.sin(tilt);
-				vz = temp * Math.sin(tilt) + vz * Math.cos(tilt);
-
-				// Apply the nozzle orientation angle.
-				temp = vx;
-				vx = temp * Math.cos(orientation) - vy * Math.sin(orientation);
-				vy = temp * Math.sin(orientation) + vy * Math.cos(orientation);
-
-				// Determine where the paint will hit the surface.
-				if (vz < 0.05) {
-					continue;
-				}
-				float pd = (float) (z / vz);
-				float px = (float) (vx * pd);
-				float py = (float) (vy * pd);
-
-				// Throw some paint at this location, relative to the center of
-				// the spray.
-				mCanvas.drawCircle(x + px - cx, y + py - cy, 1.0f, paint);
-			}
-		}
-		
-/*
-		
-        private PathEffect makeDash(float phase) {
-            return new DashPathEffect(new float[] { 15, 5, 8, 5 }, phase);
-        }
-        
-        
-        private void makeEffects(PathEffect[] e, float phase) {
-            e[0] = null;     // no effect
-            e[1] = new CornerPathEffect(10);
-            e[2] = new DashPathEffect(new float[] {10, 5, 5, 5}, phase);
-            e[3] = new PathDashPathEffect(makePathDash(), 12, phase,
-                                          PathDashPathEffect.Style.ROTATE);
-            e[4] = new ComposePathEffect(e[2], e[1]);
-            e[5] = new ComposePathEffect(e[3], e[1]);
-        }
-
-        @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
-            switch (keyCode) {
-                case KeyEvent.KEYCODE_DPAD_CENTER:
-                    mPath = makeFollowPath();
-                    return true;
-            }
-            return super.onKeyDown(keyCode, event);
-        }
-        
-        private Path makeFollowPath() {
-            Path p = new Path();
-            p.moveTo(0, 0);
-            for (int i = 1; i <= 15; i++) {
-                p.lineTo(i*20, (float)Math.random() * 35);
-            }
-            return p;
-        } 
-
-        private Path makePathDash() {
-            Path p = new Path();
-            p.moveTo(24, 10);
-            p.lineTo(40, 50);
-            p.lineTo(43, 83);
-            p.lineTo(34, 6);
-            p.lineTo(32, 56);
-            p.lineTo(12, 23);
-            return p;
-        }*/
 	}
 }
