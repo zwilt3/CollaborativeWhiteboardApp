@@ -32,6 +32,7 @@ import android.view.View;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.EventObject;
 import java.util.Random;
 
 /**
@@ -63,9 +64,10 @@ import java.util.Random;
  * button, which we use to cycle through colors.
  * </p>
  */
-public class TouchPaint extends GraphicsActivity {
+public class TouchPaint extends GraphicsActivity implements MyEventClassListener{
 	/** Used as a pulse to gradually fade the contents of the window. */
 	private static final int MSG_FADE = 1;
+	private static final int MSG_ENDSTROKE = 2;
 
 	/** Menu ID for the command to clear the window. */
 	private static final int CLEAR_ID = Menu.FIRST;
@@ -98,8 +100,14 @@ public class TouchPaint extends GraphicsActivity {
 	int mColorIndex;
 	
 	FileTransferClient mFClient = null;
+	
+	boolean mStrokeBool = true;
+	
+	//private ViewPoller mPoller;
 
-    
+	  public void handleMyEventClassEvent(EventObject e)	{
+		    this.mView.pollerForceEnd();
+		  }
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -130,6 +138,9 @@ public class TouchPaint extends GraphicsActivity {
 			mFading = false;
 			mColorIndex = 0;
 		}
+		//mPoller = new ViewPoller(this);
+		//mPoller.start();
+
 	}
 
 	@Override
@@ -238,6 +249,16 @@ public class TouchPaint extends GraphicsActivity {
 				scheduleFade();
 				break;
 			}
+			case MSG_ENDSTROKE:
+			{
+//				if (mStrokeBool)
+	//			{
+					mView.pollerForceEnd();
+					//mStrokeBool = false;
+					this.removeMessages(MSG_ENDSTROKE);
+			//	}
+				//mStrokeBool = true;;
+			}
 			default:
 				super.handleMessage(msg);
 			}
@@ -253,7 +274,7 @@ public class TouchPaint extends GraphicsActivity {
 	 * 
 	 * It handles all of the input events and drawing functions.
 	 */
-	class PaintView extends View {
+	class PaintView extends View{
 		private static final int FADE_ALPHA = 0x06;
 		private static final int MAX_FADE_STEPS = 256 / FADE_ALPHA + 4;
 		private static final int TRACKBALL_SCALE = 10;
@@ -279,8 +300,8 @@ public class TouchPaint extends GraphicsActivity {
 		public long currentpointtime;
 		private float mLastX = 0;
 		private float mLastY = 0;
-		public boolean StrokeEnded = false;
-		private ViewPoller mPoller;
+		//public boolean StrokeEnded = false;
+
         
 		public PaintView(TouchPaint c) {
 			
@@ -297,10 +318,11 @@ public class TouchPaint extends GraphicsActivity {
 			
 			//TODO get this from server on creation
 			pathVec = new ArrayList<Path>();
-			mPoller = new ViewPoller(this);
-			mPoller.start();
+
 			
 		}
+		
+
 
 		public void clear() {
 			if (mCanvas != null) {
@@ -470,6 +492,8 @@ public class TouchPaint extends GraphicsActivity {
 			final int buttonState = event.getButtonState();
 			int pressedButtons = buttonState & ~mOldButtonState;
 			mOldButtonState = buttonState;
+			mHandler.removeMessages(MSG_ENDSTROKE);
+			//mStrokeBool = false;
 
 			if ((pressedButtons & MotionEvent.BUTTON_SECONDARY) != 0) {
 				// Advance color when the right mouse button or first stylus
@@ -524,6 +548,8 @@ public class TouchPaint extends GraphicsActivity {
 				mCurX = event.getX();
 				mCurY = event.getY();
 			}
+			mHandler.sendMessageDelayed(mHandler.obtainMessage(MSG_ENDSTROKE),
+					1500);
 			return true;
 		}
 
