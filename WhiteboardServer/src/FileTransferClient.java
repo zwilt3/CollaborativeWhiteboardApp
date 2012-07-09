@@ -30,11 +30,6 @@ public class FileTransferClient {
 		output.flush();
 	}
 	
-	/*public PathData loadPathData(String filename) throws IOException{
-		String pathContents = getFile(filename);
-		
-	}*/
-	
 	/**
 	 * This is step 1 - login
 	 * @param input
@@ -43,13 +38,13 @@ public class FileTransferClient {
 	 * @throws IOException 
 	 */
 	private boolean doLogin(DataInputStream input, DataOutputStream output) throws IOException{
-		//step 1.client - send username
+		System.out.println("//step 1.client - send username");
 		sendMessage(output, username);
 		
-		//step 2.client - send password
+		System.out.println("//step 2.client - send password");
 		sendMessage(output, password);
 		
-		//step 3.client - get login response
+		System.out.println("//step 3.client - get login response");
 		int len = input.readInt();
 		String response = IOTools.readFully(input, len);
 		return response.equals("OK");
@@ -64,13 +59,52 @@ public class FileTransferClient {
 		
 		System.out.println("Client <" + username + ", " + password + "> logged in successfully!");
 		
-		//step 4.client - send filename
+		//step 4.client - send operation type 
+		sendMessage(output, "CLIENT_GET_FILE");
+		
+		//step 5.client - send filename
 		sendMessage(output, filename);
 		
-		//step 5.client - get file contents
+		//step 6.client - get file contents
 		int fileLen = input.readInt();
 		String fileData = IOTools.readFully(input, fileLen);
+		System.out.println("Client got file:\n" + fileData + "\nEOF\n\n");
 		return fileData;
+	}
+	
+	public void sendUpdate(String filename) throws IOException{
+		DataInputStream input = new DataInputStream(socket.getInputStream());
+		DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+		
+		boolean loggedIn = doLogin(input, output);
+		if (!loggedIn){
+			System.err.println("[ERROR] Client could not log in");
+			return;
+		}
+		
+		System.out.println("Client <" + username + ", " + password + "> logged in successfully!");
+		
+		System.out.println("//step 4.client - send operation type");
+		sendMessage(output, "CLIENT_SEND_FILE");
+		
+		System.out.println("//step 5.client - send filename");
+		sendMessage(output, filename);
+		
+		System.out.println("//step 6.client - send file contents");
+		sendMessage(output, IOTools.readFile(filename));
+	}
+	
+	//TODO implement this
+	public String retrieveUpdates() throws IOException{
+		DataInputStream input = new DataInputStream(socket.getInputStream());
+		DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+		
+		boolean loggedIn = doLogin(input, output);
+		if (!loggedIn) return "[ERROR] Could not log in to server";
+		
+		System.out.println("Client <" + username + ", " + password + "> logged in successfully!");
+		
+		return null;
 	}
 	
 }

@@ -31,16 +31,18 @@ public class FileTransferServer extends Thread{
 
 	public void run(){
 		System.out.println("Server is listening on port " + serverPort);
+		int i = 0;
 		while (true){
+			System.out.println("Starting connection " + (++i));
 			Socket clientSocket;
 			try {
 				clientSocket = serverSocket.accept();
 				new Connection(clientSocket);
 			} 
-			catch (IOException e) {
-				// TODO Auto-generated catch block
+			catch (Exception e) {
 				e.printStackTrace();
 			}
+			System.out.println("Ending connection " + i);
 		}
 	}
 
@@ -49,24 +51,25 @@ public class FileTransferServer extends Thread{
 		DataOutputStream output;
 		Socket clientSocket;
 
-		public Connection(Socket clientSocket) throws IOException{
+		public Connection(Socket clientSocket) throws IOException, InterruptedException{
 			this.clientSocket = clientSocket;
 			input = new DataInputStream(clientSocket.getInputStream());
 			output = new DataOutputStream(clientSocket.getOutputStream());
 			
 			this.start();
+			this.join();
 		}
 		
 		public boolean authenticate() throws IOException{
-			//step 1.server - get username
+			System.out.println("//step 1.server - get username");
 			int usernameLen = input.readInt();
 			String username = IOTools.readFully(input, usernameLen);
 			
-			//step 2.server - getpassword
+			System.out.println("//step 2.server - getpassword");
 			int passLen = input.readInt();
 			String password = IOTools.readFully(input, passLen);
 			
-			//step 3.server - send "OK" or "FAIL"
+			System.out.println("//step 3.server - send \"OK\" or \"FAIL\"");
 			boolean isAuth = !users.containsKey(username) || users.get(username).equals(hash(password));
 			if (isAuth) sendMessage("OK");
 			else sendMessage("FAIL");
@@ -92,28 +95,40 @@ public class FileTransferServer extends Thread{
 				
 				if (!authenticate()){
 					sendFailure();
-				}
-				
-				//step 4.server - get filename
-				int filenameLen = input.readInt();
-				String filename = IOTools.readFully(input, filenameLen);
-				
-				//Send the bytes
-				BufferedReader br = null;
-				try{
-					br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(filename))));
-				}
-				catch(IOException e){
-					sendMessage("[ERROR] File not found! You requested: " + filename);
 					return;
 				}
-				String line;
-				StringBuilder fileData = new StringBuilder();
-				while ((line = br.readLine()) != null){
-					fileData.append(line);
+				
+				//step 4.server - determine operation type
+				int operationLen = input.readInt();
+				String operation = IOTools.readFully(input, operationLen);
+				
+				if ("CLIENT_GET_FILE".equals(operation)){//
+					//step 5.server - get filename
+					int filenameLen = input.readInt();
+					String filename = IOTools.readFully(input, filenameLen);
+										
+					//step 6.server - send file contents
+					sendMessage(IOTools.readFile(filename));
 				}
-				//step 5.server - send file contents
-				sendMessage(fileData.toString());
+				else if ("CLIENT_SEND_FILE".equals(operation)){
+					
+					System.out.println("//step 5.server - get filename");
+					int filenameLen = input.readInt();
+					String filename = IOTools.readFully(input, filenameLen);
+					
+					System.out.println("//step 6.server - get file contents");
+					int fileLen = input.readInt();
+					String fileData = IOTools.readFully(input, fileLen);					
+					System.out.println("Server got file:\n" + fileData + "\nEOF\n\n");
+
+				}
+				else{
+					sendMessage("[ERROR] Unknown operation.");
+					return;
+				}
+				
+				
+				
 			}
 			catch(Exception e){
 				e.printStackTrace();

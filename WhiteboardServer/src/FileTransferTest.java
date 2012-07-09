@@ -10,7 +10,10 @@ public class FileTransferTest {
 		FileTransferServer server = new FileTransferServer(port);
 		server.start();
 		FileTransferClient client = new FileTransferClient("localhost", port);
-		System.out.println(client.getFile("/TestFile"));
+		System.out.println("client saw " + client.getFile("/TestFile"));
+		client = new FileTransferClient("localhost", port);
+		client.sendUpdate("/TestFile");
+		System.out.println("client sent ");
 	}
 
 }

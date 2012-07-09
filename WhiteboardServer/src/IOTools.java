@@ -10,6 +10,22 @@ public class IOTools {
 		}
 		return new String(bytes);
 	}
+	
+	public static String readFile(String filename) throws IOException{
+		BufferedReader br = null;
+		try{
+			br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(filename))));
+		}
+		catch(IOException e){
+			throw new FileNotFoundException("[ERROR] File not found! You requested: " + filename);
+		}
+		String line;
+		StringBuilder fileData = new StringBuilder();
+		while ((line = br.readLine()) != null){
+			fileData.append(line);
+		}
+		return fileData.toString();
+	}
 
 
 }
